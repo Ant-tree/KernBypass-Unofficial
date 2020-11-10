@@ -153,7 +153,7 @@ void kernbypassAlertButtonCallBack () {
         finalApps = [self userApplications:finalApps];
         finalApps = [self sortedDictionary:finalApps];
 
-        NSMutableArray *applicationSpecifiers = [NSMutableArray new];
+        NSMutableArray *applicationSpecifiers = [NSMutableArray array];
 
         for (NSString *displayIdentifier in finalApps.allKeys) {
             NSString *displayName = finalApps[displayIdentifier];

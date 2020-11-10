@@ -84,13 +84,13 @@ int main(int argc, char **argv, char **envp) {
                 } else {
                     printf("/usr/bin/preparerootfs\n");
                     easy_spawn((const char *[]){"/usr/bin/preparerootfs", NULL});
-                    sleep(1);
+                    sleep(3);
                 }
                 // changerootfs
                 printf("/usr/bin/changerootfs &\n");
                 easy_spawn((const char *[]){"/usr/bin/changerootfs", "&", NULL});
 
-                sleep(1);
+                sleep(3);
 
                 printf("disown %%1\n");
                 easy_spawn((const char *[]){"disown", "%1", NULL});
@@ -111,11 +111,13 @@ int main(int argc, char **argv, char **envp) {
             remove(kernbypassMem);
             remove(changerootfsMem);
             CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), CFSTR(Notify_Alert), NULL, NULL, YES);
+        } else if (access(kernbypassMem, F_OK) == 0) {
+            printf("ERROR: already running changerootfs\n");
         } else {
             printf("Settings -> KernBypass, turn on \"kernbypassd\"\n");
         }
     }
-	return 0;
+    return 0;
 }
 
 static void settingsChanged(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
