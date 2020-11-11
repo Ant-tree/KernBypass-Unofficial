@@ -90,7 +90,7 @@ int main(int argc, char **argv, char **envp) {
                 printf("/usr/bin/changerootfs &\n");
                 easy_spawn((const char *[]){"/usr/bin/changerootfs", "&", NULL});
 
-                sleep(3);
+                sleep(1);
 
                 printf("disown %%1\n");
                 easy_spawn((const char *[]){"disown", "%1", NULL});

@@ -5,7 +5,7 @@ FINALPACKAGE = 1
 TARGET := iphone:clang:14.0:12.1.2
 MIN_IOS_SDK_VERSION = 7.0
 
-THEOS_DEVICE_IP = localhost -p 2222
+THEOS_DEVICE_IP = 127.0.0.1 -p 2222
 
 TOOL_NAME = preparerootfs changerootfs
 
@@ -52,4 +52,4 @@ after-package::
 	make clean
 
 after-install::
-	install.exec "ldrestart"
+	install.exec "sbreload"

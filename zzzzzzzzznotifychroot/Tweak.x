@@ -3,8 +3,6 @@
 #include <spawn.h>
 #include "../config.h"
 
-#define rebootMem "/var/mobile/kernbypassReboot"
-
 static UIWindow *window = nil;
 static BOOL autoEnabled;
 
@@ -66,7 +64,44 @@ void bypassApplication(NSString *bundleID) {
     %orig;
     // Automatically enabled on Reboot and Re-Jailbreak etc
     if (autoEnabled && access(kernbypassMem, F_OK) != 0) {
-        easy_spawn((const char *[]){"/usr/bin/kernbypassd", NULL});
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3.0 * NSEC_PER_SEC), dispatch_get_main_queue(), ^(void) {
+            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Enable KernByPass?"
+                                                                           message:@"​Run kernbypassd"
+                                                                    preferredStyle:UIAlertControllerStyleAlert];
+
+            window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+            window.windowLevel = UIWindowLevelAlert;
+
+            [window makeKeyAndVisible];
+            window.rootViewController = [[UIViewController alloc] init];
+            UIViewController *vc = window.rootViewController;
+
+            UIAlertAction *caAction = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+                window.hidden = YES;
+                window = nil;
+            }];
+
+            UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"YES" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+                window.hidden = YES;
+                window = nil;
+                // run kernbypassd
+                NSMutableDictionary *mutableDict = [[NSMutableDictionary alloc] initWithContentsOfFile:PREF_PATH]?:[NSMutableDictionary dictionary];
+                [mutableDict setObject:@YES forKey:@"autoEnabled"];
+                [mutableDict writeToFile:PREF_PATH atomically:YES];
+                CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), CFSTR(Notify_Preferences), NULL, NULL, YES);
+                easy_spawn((const char *[]){"/usr/bin/kernbypassd", NULL});
+                // touch /tmp/kernbypassdAlertMem
+                FILE *fp = fopen(kernbypassdAlertMem, "w");
+                fclose(fp);
+            }];
+
+            [alert addAction:caAction];
+            [alert addAction:okAction];
+
+            alert.preferredAction = okAction;
+
+            [vc presentViewController:alert animated:YES completion:nil];
+        });
     }
     // Alert prompting for Reboot when using previous version
     if ([[NSFileManager defaultManager] removeItemAtPath:@rebootMem error:nil]) {
@@ -111,6 +146,52 @@ static void settingsChanged(CFNotificationCenterRef center, void *observer, CFSt
     autoEnabled = (BOOL)[dict[@"autoEnabled"] ?: @NO boolValue];
 }
 
+static void notifyAlert(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
+    if (access(kernbypassMem, F_OK) == 0 && access(kernbypassdAlertMem, F_OK) == 0) {
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:nil
+                                                                       message:@"Enabled KernBypass"
+                                                                preferredStyle:UIAlertControllerStyleAlert];
+
+        window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+        window.windowLevel = UIWindowLevelAlert;
+
+        [window makeKeyAndVisible];
+        window.rootViewController = [[UIViewController alloc] init];
+        UIViewController *vc = window.rootViewController;
+
+        UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleCancel handler:^(UIAlertAction *action) {
+            window.hidden = YES;
+            window = nil;
+            remove(kernbypassdAlertMem);
+        }];
+
+        [alert addAction:okAction];
+
+        [vc presentViewController:alert animated:YES completion:nil];
+    } else if (access(kernbypassdAlertMem, F_OK) == 0) {
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:nil
+                                                                       message:@"Failed"
+                                                                preferredStyle:UIAlertControllerStyleAlert];
+
+        window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+        window.windowLevel = UIWindowLevelAlert;
+
+        [window makeKeyAndVisible];
+        window.rootViewController = [[UIViewController alloc] init];
+        UIViewController *vc = window.rootViewController;
+
+        UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleCancel handler:^(UIAlertAction *action) {
+            window.hidden = YES;
+            window = nil;
+            remove(kernbypassdAlertMem);
+        }];
+
+        [alert addAction:okAction];
+
+        [vc presentViewController:alert animated:YES completion:nil];
+    }
+}
+
 %ctor {
     // Settings Notifications
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
@@ -121,6 +202,14 @@ static void settingsChanged(CFNotificationCenterRef center, void *observer, CFSt
                                     CFNotificationSuspensionBehaviorCoalesce);
 
     settingsChanged(NULL, NULL, NULL, NULL, NULL);
+
+    // Alert Notifications
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
+                                    NULL,
+                                    notifyAlert,
+                                    CFSTR(Notify_Alert),
+                                    NULL,
+                                    CFNotificationSuspensionBehaviorCoalesce);
 
     NSString *identifier = [[NSBundle mainBundle] bundleIdentifier];
 

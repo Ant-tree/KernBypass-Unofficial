@@ -16,3 +16,4 @@
 
 #define kernbypassMem "/tmp/kernbypassMem"
 #define changerootfsMem "/tmp/changerootfsMem"
+#define kernbypassdAlertMem "/tmp/kernbypassdAlertMem"

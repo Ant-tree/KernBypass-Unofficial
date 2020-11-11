@@ -140,6 +140,7 @@ int link_folders() {
     
     printf("Linking fakevar to var!\n");
     copy_file_in_memory(FAKEROOTDIR"/private/var", FINAL_FAKEVARDIR, true);
+    
     return 0;
 }
 
@@ -163,7 +164,7 @@ int main(int argc, char *argv[], char *envp[]) {
         
         printf("open root directory fd = %d\n", fd);
         
-        printf("trying to mount kernbypass snapshot...");
+        printf("trying to mount kernbypass snapshot...\n");
         err = fs_snapshot_mount(fd, FAKEROOTDIR, "kernbypass", 0);
         
         if (err != 0) {

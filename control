@@ -7,7 +7,7 @@ Depends: mobilesubstrate, preferenceloader
 Conflicts: jp.akusio.kernbypass, com.apple.memecity
 Replaces: jp.akusio.kernbypass-unofficial
 Section: System
-Version: 0.0.4-1
+Version: 0.0.4-2
 Architecture: iphoneos-arm
 Description: kernel level jailbreak detection bypass.
 Depiction: https://cydia.ichitaso.com/depiction/kernbypass.html
